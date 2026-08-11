@@ -1,0 +1,44 @@
+ls -l level0
+
+-rwsr-x---+ 1 level1 users  747441 Mar  6  2016 level0
+
+We can see that the binary has the SUID (Set User ID) bit set and is owned by level1.
+
+gdb ./level0
+
+(gdb) set disassembly-flavor intel
+(gdb) disassemble main
+
+See [asm_analysis.md](Ressources/asm_analysis.md) for the complete ASM analysis.
+
+The ASM analysis shows that the program essentially behaves like this:
+
+if (atoi(argv[1]) == 423)
+{
+    str = strdup("/bin/sh");
+
+    args[0] = str;
+    args[1] = NULL;
+
+    gid = getegid();
+    uid = geteuid();
+
+    setresgid(gid, gid, gid);
+    setresuid(uid, uid, uid);
+
+    execv("/bin/sh", args);
+}
+else
+{
+    fwrite("No !\n", 1, 5, stderr);
+}
+
+We notice that this program when argv[1] is equal to 423 launches a shell with the level1 permissions
+
+We can now simply call ./level0 423
+
+then cat /home/user/level1/.pass to retrieve the flag.
+
+
+
+
