@@ -1,19 +1,32 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 char *gets(char *);
 
-void run(void)
+void p(void)
 {
-    fwrite("Good... Wait what?\n", 1, 19, stdout);
-    system("/bin/sh");
+    char buffer[64];
+    unsigned int saved_eip;
+
+    fflush(stdout);
+
+    gets(buffer);
+
+    saved_eip = (unsigned int)__builtin_return_address(0);
+    if ((saved_eip & 0xb0000000) == 0xb0000000)
+    {
+        printf("(%p)\n", (void *)saved_eip);
+        exit(1);
+    }
+
+    puts(buffer);
+    strdup(buffer);
 }
 
 int main(void)
 {
-    char buffer[64];
-
-    gets(buffer);
-
+    p();
     return 0;
 }
