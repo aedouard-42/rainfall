@@ -1,0 +1,47 @@
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <time.h>
+
+	char c[68];
+
+	struct element_t
+	{
+		int value;
+		char *ptr;
+	};
+
+	void m(void)
+	{
+		time_t cur_time;
+
+		cur_time = time(NULL);
+		printf("%s - %d\n", c, cur_time);
+	}
+
+	int main(int argc, char **argv)
+	{
+		struct element_t *element1;
+		struct element_t *element3;
+
+		FILE *fd;
+
+		element1 = malloc(8);
+		element1->value = 1;
+		element1->ptr = malloc(8);
+
+		element3 = malloc(8);
+		element3->value = 2;
+		element3->ptr = malloc(8);
+
+		strcpy(element1->ptr, argv[1]);
+		strcpy(element3->ptr, argv[2]);
+
+		fd = fopen("/home/user/level8/.pass", "r");
+
+		fgets(c, 68, fd);
+
+		puts("~~");
+
+		return 0;
+	}

