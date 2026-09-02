@@ -1,0 +1,40 @@
+See [asm_analysis.md](Ressources/asm_analysis.md) for the complete ASM analysis.
+
+After the ASM analysis, we can see that for the program to run system("/bin/sh") we need g_ptr1[32] to not be equal to zero. and the buffer to start with "login"
+
+This pointer is allocated on the heap when the given buffer starts with "auth "
+
+Only 4 bytes are allocated, so we can't write directly on g_ptr1[32].
+
+However, there is another pointer g_ptr2 that is allocated with strdup when the buffer starts with "service" 
+
+level8@RainFall:~$ ./level8 
+(nil), (nil) 
+auth 
+0x804a008, (nil) 
+service
+0x804a008, 0x804a018 
+
+We can see that g_ptr2 is allocated at an address 16 bytes after g_ptr1:
+
+g_ptr1 = 0x804a008
+g_ptr2 = 0x804a018
+
+Therefore:
+
+g_ptr2 - g_ptr1 = 0x10 = 16
+
+The condition checked by the program is located at offset 0x20 (32 bytes) from g_ptr1.
+
+Since g_ptr2 starts 16 bytes after g_ptr1, this location is 16 bytes after the beginning of the memory pointed to by g_ptr2.
+
+Because g_ptr2 contains a string copied with strdup, sufficiently long input can make the copied string extend into this region. This can cause the value read at g_ptr1 + 32 to be non-zero, satisfying the condition required to reach the shell.
+
+level8@RainFall:~$ ./level8 
+(nil), (nil) 
+auth 
+0x804a008, (nil) 
+service0123456789abcdef
+0x804a008, 0x804a018 
+login
+$ cat /home/user/level9/.pass

@@ -1,0 +1,47 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+char *g_ptr1 = NULL;
+char *g_ptr2 = NULL;
+
+int main ()
+{
+    char buffer[128];
+
+    while (1)
+    {
+        printf("%p, %p\n", g_ptr1, g_ptr2);
+
+        if (fgets(buffer, 128, stdin) == NULL)
+            return 0;
+
+        if (strncmp(buffer, "auth ", 5) == 0)
+        {
+            g_ptr1 = malloc(4);
+            *g_ptr1 = '\0';
+
+            if (strlen(buffer + 5) <= 30)
+                strcpy(g_ptr1, buffer + 5);
+        }
+
+        if (strncmp(buffer, "reset", 5) == 0)
+            free(g_ptr1);
+
+        if (strncmp(buffer, "service", 6) == 0)
+            g_ptr2 = strdup(buffer + 7);
+
+        if (strncmp(buffer, "login", 5) == 0)
+        {
+            if (g_ptr1[32] != 0)
+            {
+                system("/bin/sh");
+            }
+            else
+            {
+                fwrite("Password:\n", 10, 1, stdout);
+            }
+        }
+        
+    }
+}
